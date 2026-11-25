@@ -211,7 +211,7 @@ main .panel.clockp,main .panel.formp{width:100%}
 .clock .cpb.t-lead rect{fill:#E8B94E;stroke:#C98F1E}.clock .cpb.t-lead text{fill:#3A2500}
 .clock .cpb.t-sup rect{fill:#7F5FD2;stroke:#5B3BAE}.clock .cpb.t-sup text{fill:#fff}
 .clock .cpb.t-senior rect{fill:color-mix(in srgb,#3B82F6 22%,var(--surface));stroke:color-mix(in srgb,#3B82F6 45%,transparent)}.clock .cpb.t-senior text{fill:var(--blue,#60A5FA)}
-.clock .cpb.pc-hot rect{fill:#E8501A;stroke:#B91C1C}.clock .cpb.pc-cold rect{fill:#2F80E8;stroke:#1D4ED8}.clock .cpb.pc-pastry rect{fill:#D946EF;stroke:#A21CAF}
+.clock .cpb.pc-swaiter rect{fill:#14A391;stroke:#0F766E}.clock .cpb.pc-hot rect{fill:#E8501A;stroke:#B91C1C}.clock .cpb.pc-cold rect{fill:#2F80E8;stroke:#1D4ED8}.clock .cpb.pc-pastry rect{fill:#D946EF;stroke:#A21CAF}
 .clock .cpb.pc-hot text,.clock .cpb.pc-cold text,.clock .cpb.pc-pastry text{fill:#fff}
 .clock .chit{fill:transparent;cursor:pointer}
 .clock .cmark{display:none;pointer-events:none}.clock .cmark text{font:800 12.5px var(--mono);text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:7px;stroke-linejoin:round}
@@ -352,7 +352,7 @@ main .panel.clockp,main .panel.formp{width:100%}
   background:color-mix(in srgb,var(--muted) 22%,var(--surface));border:1px solid color-mix(in srgb,var(--muted) 40%,transparent)}
 #cbig .ptag.t-lead{background:#E8B94E;border-color:#C98F1E;color:#3A2500}#cbig .ptag.t-sup{background:#7F5FD2;border-color:#5B3BAE}
 #cbig .ptag.t-senior{background:color-mix(in srgb,#3B82F6 22%,var(--surface));border-color:color-mix(in srgb,#3B82F6 45%,transparent);color:var(--blue,#60A5FA)}
-#cbig .ptag.pc-hot{background:#E8501A;border-color:#B91C1C}#cbig .ptag.pc-cold{background:#2F80E8;border-color:#1D4ED8}#cbig .ptag.pc-pastry{background:#D946EF;border-color:#A21CAF}
+#cbig .ptag.pc-swaiter{background:#14A391;border-color:#0F766E}#cbig .ptag.pc-hot{background:#E8501A;border-color:#B91C1C}#cbig .ptag.pc-cold{background:#2F80E8;border-color:#1D4ED8}#cbig .ptag.pc-pastry{background:#D946EF;border-color:#A21CAF}
 .fzbar{display:flex;align-items:center;gap:6px;margin:0 0 8px}.fzbar .btn{min-width:38px;font-weight:700}.fzbar .fzv{min-width:60px;font-variant-numeric:tabular-nums}
 @media (hover:hover){.fzbar .sub{display:none}}
 .fcol{display:flex;flex-direction:column;gap:10px;min-width:0}
@@ -578,6 +578,7 @@ table.grid tbody tr:last-child td.selday{box-shadow:inset 2px 0 0 var(--accent),
 /* hot and cold kitchen each have their own colour */
 .posb.pc-hot,.pl .pp.pc-hot{background:linear-gradient(135deg,#F97316,#DC2626)!important;color:#fff!important;border-color:#B91C1C!important}
 .posb.pc-cold,.pl .pp.pc-cold{background:linear-gradient(135deg,#38BDF8,#2563EB)!important;color:#fff!important;border-color:#1D4ED8!important}
+.posb.pc-swaiter,.pl .pp.pc-swaiter{background:linear-gradient(135deg,#2DD4BF,#0F766E)!important;color:#fff!important;border-color:#0F766E!important}
 .posb.pc-pastry,.pl .pp.pc-pastry{background:linear-gradient(135deg,#F472B6,#C026D3)!important;color:#fff!important;border-color:#A21CAF!important}
 /* a player: the token sits on its time, with name, position and the real in and out under it */
 .tfield .pl{transform:translate(-50%,-20px);gap:3px}
@@ -3938,7 +3939,7 @@ function posRank(pos){const k=pk(pos);if(!k)return 900;const L=posList().map(pk)
 function posOf(name,role){const o=((S.cfg&&S.cfg.pos)||{})[key(name)];return o!=null&&o!==''?String(o):String(role||'')}
 function posTier(pos){const k=pk(pos);if(!k)return '';if(/^gm$|manager|headchef|executive/.test(k))return 'lead';if(/sous|spv|supervis|captain|^head|^seniorwaiter/.test(k))return 'sup';if(/^senior/.test(k))return 'senior';return 'crew'}
 const POSICON={lead:'★ ',sup:'▲ ',senior:'◆ ',crew:''};
-const posCls=pos=>{const s=key(pos);return /\bhot\b/.test(s)?' pc-hot':/\bcold\b/.test(s)?' pc-cold':/pastry/.test(s)?' pc-pastry':''},
+const posCls=pos=>{const s=key(pos);return /^seniorwaiter/.test(pk(pos))?' pc-swaiter':/\bhot\b/.test(s)?' pc-hot':/\bcold\b/.test(s)?' pc-cold':/pastry/.test(s)?' pc-pastry':''},
   posBadge=pos=>{pos=String(pos||'').trim();if(!pos)return '';const t=posTier(pos);return `<span class="posb t-${t}${posCls(pos)}" title="${esc(T('Position'))}: ${esc(pos)}">${POSICON[t]||''}${esc(pos)}</span>`};
 const pRank=p=>posRank(posOf(p.name,p.role));
 /* ---------- one day of the schedules: who works which shift, as a clock (Schedules) and as a formation (Formation) ---------- */
