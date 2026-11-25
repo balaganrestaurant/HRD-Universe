@@ -894,7 +894,11 @@ td .mn{color:var(--muted);font-size:12px}
 .offsum{display:flex;flex-direction:column;gap:6px;margin:8px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--surface) 80%,transparent)}
 .offsum>div{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.offsum>div>b{font-size:12.5px;min-width:9.5em}.offsum>div>span{display:flex;flex-wrap:wrap;gap:5px}
 .ofc{display:inline-flex;gap:5px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:1px 9px;font:600 12px var(--mono);color:var(--muted)}
-.ofc b{color:var(--ink)}.ofc.dpl{border-color:color-mix(in srgb,#22C55E 55%,var(--line));color:var(--ink)}.ofc.dpl.neg{border-color:#E5484D}.ofc.on{border-color:color-mix(in srgb,var(--accent) 60%,var(--line));background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--ink)}
+.ofc b{color:var(--ink)}
+.ofc[class*=" k-"]{border-color:color-mix(in srgb,var(--kc) 55%,transparent);color:color-mix(in srgb,var(--kc) 75%,var(--ink))}
+.ofc[class*=" k-"].on{background:color-mix(in srgb,var(--kc) 24%,transparent);border-color:var(--kc);color:color-mix(in srgb,var(--kc) 55%,#fff)}
+.ofc[class*=" k-"].on b{color:#fff}
+.ofc.zero{opacity:.38}.ofc.k-ph{--kc:#D4A72C}.ofc.k-paid{--kc:#2FA66A}.ofc.k-leave{--kc:#14B8A6}.ofc.k-sick{--kc:#E05A84}.ofc.k-unpaid{--kc:#E08A2B}.ofc.k-off{--kc:#8393AD}.ofc.k-unknown{--kc:#A78BFA}.ofc.dpl{border-color:color-mix(in srgb,#22C55E 55%,var(--line));color:var(--ink)}.ofc.dpl.neg{border-color:#E5484D}.ofc.on{border-color:color-mix(in srgb,var(--accent) 60%,var(--line));background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--ink)}
 table.acc tr.tot td{border-top:2px solid var(--line)}
 .ptc .pmid{color:var(--amber,#E0A93A)}.ptc .pbad{color:var(--red,#E5484D)}.rtable{max-height:calc(100dvh - 120px)}
 .rtable.fitx{overflow:visible;max-height:none}
@@ -3863,7 +3867,9 @@ function offCounts(rows){const c={};for(const r of rows||[])if((r.cls==='off'||r
 function yearOffCounts(name,year,upto){const c={},k0=key(name);for(const id in S.sched){const d=S.sched[id];if(!d||!d.month||!d.month.startsWith(year+'-')||d.month>upto)continue;
   const p=(d.people||[]).find(x=>key(x.name)===k0);if(!p)continue;for(const dd in (p.days||{})){if(parseCode(p.days[dd],S.cfg,d.name).type==='off'){const k=STK(p.days[dd]);c[k]=(c[k]||0)+1}}}return c}
 const stKeys=list=>{const ex=new Set();list.forEach(c=>Object.keys(c).forEach(k=>{if(!STORD.includes(k))ex.add(k)}));return STORD.filter(k=>['DP','AL','DC'].includes(k)||list.some(c=>c[k])).concat([...ex].sort())};
-function offChipsHtml(c,keys){return keys.map(k=>`<span class="ofc${c[k]?' on':''}" title="${esc(T(STLAB[k]||k))}">${esc(k==='DO'?T('Day off'):k)} <b>${c[k]||0}</b></span>`).join('')}
+/* each kind in the colour it has on the schedule: DP green, AL teal, DC pink, PH gold, UL/IZIN orange, day off grey */
+const STKIND={DP:'paid',AL:'leave',DC:'sick',PH:'ph',UL:'unpaid',IZIN:'unpaid',DO:'off'};
+function offChipsHtml(c,keys){return keys.map(k=>`<span class="ofc k-${STKIND[k]||'unknown'}${c[k]?' on':' zero'}" title="${esc(T(STLAB[k]||k))}">${esc(k==='DO'?T('Day off'):k)} <b>${c[k]||0}</b></span>`).join('')}
 /* for accounting: one row per person with the hours actually worked and the number of days of each kind of leave or day off */
 function accData(){
   const list=personOrder().filter(p=>p.noSched||p.rows),C=list.map(p=>p.noSched?{}:offCounts(p.rows)),keys=stKeys(C);
