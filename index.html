@@ -913,7 +913,7 @@ table.acc tr.tot td{border-top:2px solid var(--line)}
 .ptc .pmid{color:var(--amber,#E0A93A)}
 /* in the day list: a clock-in after the start, or a clock-out before the end, is marked (amber within the grace minutes, red when late or early) */
 .rtable td.t.tlate,.rtable td.t.tlate2,.rtable td.t.tearly{font-weight:700;border-radius:6px}
-.rtable td.t.tlate{color:var(--red)}
+.rtable td.t.tlate{color:var(--red)}.rtable td.t.texc{color:var(--blue)}.rtable td.t.texc .sub{color:inherit;opacity:.8}
 .rtable td.t.tlate2{color:var(--amber)}
 .rtable td.t.tearly{color:var(--red)}.ptc .pbad{color:var(--red,#E5484D)}.rtable{max-height:calc(100dvh - 120px)}
 .rtable.fitx{overflow:visible;max-height:none}
@@ -3304,8 +3304,11 @@ function saveExplained(k,note){
   if(note!=null)doc.items.push({k,note:String(note).trim().slice(0,200),at:new Date().toISOString().slice(0,10)});
   S.exEdit=null;save('explained/'+S.month,doc);
 }
+/* the earlier whole-month excuse becomes one tick per date it actually excused (nothing else changes), so a single date can then be unticked */
+function exMonthToDays(p,doc){const ex=doc.ex||{};if(!p||!ex[p.key])return;doc.ex=Object.assign({},ex);delete doc.ex[p.key];doc.exd=Object.assign({},doc.exd);
+  for(const r of p.rows){if(!r.start||!(r.exIn||r.exOut))continue;const k=p.key+'|'+rowDay(r);if(doc.exd[k])continue;doc.exd[k]=r.exIn&&r.exOut?'both':r.exIn?'in':'out'}}
 /* one date of a person's card: excuse a forgotten clock-in or clock-out, or mark it worked without a break */
-function rowEditor(p,r,dd){const k=p.key+'|'+dd,dv=((S.nb[S.month]||{}).exd||{})[k]||'',cin=dv==='in'||dv==='both',cout=dv==='out'||dv==='both',nbOK=!p.sum.byShift&&((r.cls==='ok'&&(r.in!=null||r.out!=null))||(r.cls==='unsched'&&r.in!=null&&r.out!=null));
+function rowEditor(p,r,dd){const k=p.key+'|'+dd,dv=((S.nb[S.month]||{}).exd||{})[k]||'',xm=!!(((S.nb[S.month]||{}).ex||{})[p.key]),cin=dv==='in'||dv==='both'||(xm&&!!r.exIn),cout=dv==='out'||dv==='both'||(xm&&!!r.exOut),nbOK=!p.sum.byShift&&((r.cls==='ok'&&(r.in!=null||r.out!=null))||(r.cls==='unsched'&&r.in!=null&&r.out!=null));
   return `<div class="dayedit"><h3>${dlab(r.d0)} · ${esc(r.code||'')}${r.start?' · '+hm(r.start)+'–'+hm(r.end):''}</h3><div class="form">${r.start?`<label class="chk"><input type="checkbox" data-chg="exday" data-k="${esc(k)}" data-w="in"${cin?' checked':''}${W()}> ${T('Forgot to clock in: count it as {t}',{t:hm(r.start)})}</label>
     <label class="chk"><input type="checkbox" data-chg="exday" data-k="${esc(k)}" data-w="out"${cout?' checked':''}${W()}> ${T('Forgot to clock out: count it as {t}',{t:hm(r.end)})}</label>`:''}
     ${nbOK?`<label class="chk"><input type="checkbox" data-chg="nb" data-k="${esc(k)}"${r.nb?' checked':''}${W()}> ${T('Worked without a break: add {n} overtime',{n:dur(+A.cfg.nbMin||0)})}</label>`:''}
@@ -3320,7 +3323,7 @@ function rowsEditor(p){
   if(!rows.length)return `<div class="dayedit"><div class="sub" style="margin-bottom:8px">${T('Tick one or more dates in the card, then choose here what applies to all of them.')}</div>${quick}</div>`;
   const exd=(S.nb[S.month]||{}).exd||{},items=(S.nb[S.month]||{}).items||{},sch=rows.filter(r=>r.start),nbr=rows.filter(r=>nbOKrow(p,r));
   const state=(list,f)=>{const n=list.filter(f).length;return n===0?'':n===list.length?' checked':' data-mixed="1"'};
-  const has=(r,w)=>{const v=exd[p.key+'|'+rowDay(r)]||'';return v==='both'||v===w};
+  const xm=!!(((S.nb[S.month]||{}).ex||{})[p.key]),has=(r,w)=>{const v=exd[p.key+'|'+rowDay(r)]||'';return v==='both'||v===w||(xm&&!!(w==='in'?r.exIn:r.exOut))};
   return `<div class="dayedit"><h3>${T('{n} dates ticked',{n:rows.length})}</h3><div class="sub" style="margin-bottom:8px">${rows.map(r=>dlab(r.d0)).join(', ')}</div><div class="form">
     ${sch.length?`<label class="chk"><input type="checkbox" data-chg="exdaym" data-w="in"${state(sch,r=>has(r,'in'))}${W()}> ${T('Forgot to clock in: count the scheduled start')}</label>
     <label class="chk"><input type="checkbox" data-chg="exdaym" data-w="out"${state(sch,r=>has(r,'out'))}${W()}> ${T('Forgot to clock out: count the scheduled end')}</label>`:''}
@@ -3487,7 +3490,7 @@ function renderDrawer(){
       ${p.flags.map(f=>`<tr><td>${flagPill(f)}</td><td>${esc(f.d)}</td><td>${f.sev>=1?exControls(f,'drawer'):''}</td></tr>`).join('')}</tbody></table></div>`;
     h+=`<div class="rtable"><table><thead><tr>${['Date','Code','Scheduled','In','Out','Result'].map(x=>'<th>'+T(x)+'</th>').join('')}<th class="n">${T('Hours')}</th><th class="n">${T('Late')}</th><th class="n">${T('OT')}</th><th class="n" title="${esc(T('Each shift starts at 100 and loses points for every minute late or left early, a missing punch or a different shift; a no-show scores 0'))}">${T('Points')}</th><th>${T('Notes')}</th></tr></thead><tbody>
       ${p.rows.map(r=>{const dd=Math.round((r.d0-A.m0)/DAY)+1,[lab,c]=rowLabel(r,cfg),x=t=>t==null?'—':hm(t)+(Math.floor(t/DAY)*DAY!==r.d0?` <span class="sub">${dlab(t)}</span>`:'');
-        return `<tr${S.cardSet&&rsel().has(dd)?' class="editing"':''}><td class="d">${S.cardSet&&(r.start||r.cls==='unsched')?`<label class="rtick"><input type="checkbox" data-chg="rsel" data-d="${dd}"${rsel().has(dd)?' checked':''} aria-label="${esc(T('Tick this date')+' · '+dlab(r.d0))}"> ${dlab(r.d0)}</label>`:dlab(r.d0)}</td><td class="t">${esc(r.code)}</td><td class="t">${r.start?hm(r.start)+'–'+hm(r.end):'—'}</td><td class="t${r.offL>0&&!r.exIn?(r.isLate?' tlate':' tlate2'):''}" ${r.offL>0&&!r.exIn?`title="${esc(T('{m} min late',{m:r.offL}))}"`:''}>${x(inOf(r))}${r.exIn?` <small class="sub">${T('excused')}</small>`:''}</td><td class="t${r.offE>0&&!r.exOut?' tearly':''}" ${r.offE>0&&!r.exOut?`title="${esc(T('out {m} min early',{m:r.offE}))}"`:''}>${x(outOf(r))}${r.exOut?` <small class="sub">${T('excused')}</small>`:''}</td><td>${pill(T(lab),c)}</td>
+        return `<tr${S.cardSet&&rsel().has(dd)?' class="editing"':''}><td class="d">${S.cardSet&&(r.start||r.cls==='unsched')?`<label class="rtick"><input type="checkbox" data-chg="rsel" data-d="${dd}"${rsel().has(dd)?' checked':''} aria-label="${esc(T('Tick this date')+' · '+dlab(r.d0))}"> ${dlab(r.d0)}</label>`:dlab(r.d0)}</td><td class="t">${esc(r.code)}</td><td class="t">${r.start?hm(r.start)+'–'+hm(r.end):'—'}</td><td class="t${r.exIn?' texc':r.offL>0?(r.isLate?' tlate':' tlate2'):''}" ${r.offL>0&&!r.exIn?`title="${esc(T('{m} min late',{m:r.offL}))}"`:''}>${x(inOf(r))}${r.exIn?` <small class="sub">${T('excused')}</small>`:''}</td><td class="t${r.exOut?' texc':r.offE>0?' tearly':''}" ${r.offE>0&&!r.exOut?`title="${esc(T('out {m} min early',{m:r.offE}))}"`:''}>${x(outOf(r))}${r.exOut?` <small class="sub">${T('excused')}</small>`:''}</td><td>${pill(T(lab),c)}</td>
         <td class="n">${r.shiftDone?T('1 shift'):r.work?dur(r.work)+(r.assumed?` <small class="sub" title="${T('Only one punch: counted as a full day')}">${T('assumed')}</small>`:''):''}</td><td class="n">${r.late?dur(r.late):''}</td><td class="n otc">${r.ot?dur(r.ot):''}${r.nb?` <small class="sub">${T('no break')}</small>`:''}</td><td class="n ptc">${r.pts==null?'':r.pts>=100?'<span class="sub">100</span>':`<b class="${r.pts<70?'pbad':'pmid'}" title="${esc([r.offL?T('{m} min late',{m:r.offL}):'',r.offE?T('out {m} min early',{m:r.offE}):'',r.noIn?T('no clock-in'):r.exIn?T('no clock-in (excused)'):'',r.noOut&&!r.running?T('no clock-out'):r.exOut?T('no clock-out (excused)'):'',r.cls==='swap'?T('different shift'):'',r.cls==='noshow'?T('no-show'):''].filter(Boolean).join(' · '))}">${r.pts}</b>`}</td><td class="sub">${esc(notesText(r))}</td></tr>`}).join('')||`<tr><td colspan="11" class="empty">${T('No schedule for this person in the period checked.')}</td></tr>`}
       </tbody></table></div>`;
   }else{
@@ -5224,13 +5227,13 @@ document.addEventListener('change',e=>{
   else if(c==='otunit'){const cfg=clone(S.cfg);cfg.otUnit=el.value==='minute'?'minute':'hour';save('config/main',cfg)}
   else if(c==='unsched'){const cfg=clone(S.cfg);cfg.unsched=!!el.checked;save('config/main',cfg)}
   else if(c==='rsel'){const d=+el.dataset.d;if(el.checked)rsel().add(d);else rsel().delete(d);renderDrawer()}
-  else if(c==='exdaym'||c==='nbm'){const p=A.people.find(x=>x.key===S.open);if(!p)return;const id=S.month,doc=clone(S.nb[id]||{month:id,items:{}});doc.items=Object.assign({},doc.items);doc.exd=Object.assign({},doc.exd);
+  else if(c==='exdaym'||c==='nbm'){const p=A.people.find(x=>x.key===S.open);if(!p)return;const id=S.month,doc=clone(S.nb[id]||{month:id,items:{}});doc.items=Object.assign({},doc.items);doc.exd=Object.assign({},doc.exd);if(c==='exdaym')exMonthToDays(p,doc);
     const rows=p.rows.filter(r=>rsel().has(rowDay(r)));
     for(const r of rows){const k=p.key+'|'+rowDay(r);
       if(c==='nbm'){if(!nbOKrow(p,r))continue;if(el.checked)doc.items[k]=1;else delete doc.items[k];continue}
       if(!r.start)continue;const v=doc.exd[k]||'';let i0=v==='in'||v==='both',o0=v==='out'||v==='both';if(el.dataset.w==='in')i0=el.checked;else o0=el.checked;const nv=i0&&o0?'both':i0?'in':o0?'out':'';if(nv)doc.exd[k]=nv;else delete doc.exd[k]}
     save('nobreak/'+id,doc)}
-  else if(c==='exday'){const id=S.month,doc=clone(S.nb[id]||{month:id,items:{}});doc.items=doc.items||{};doc.exd=Object.assign({},doc.exd);const k=el.dataset.k,v=doc.exd[k]||'';let i0=v==='in'||v==='both',o0=v==='out'||v==='both';if(el.dataset.w==='in')i0=el.checked;else o0=el.checked;const nv=i0&&o0?'both':i0?'in':o0?'out':'';if(nv)doc.exd[k]=nv;else delete doc.exd[k];save('nobreak/'+id,doc)}
+  else if(c==='exday'){const id=S.month,doc=clone(S.nb[id]||{month:id,items:{}});doc.items=doc.items||{};doc.exd=Object.assign({},doc.exd);exMonthToDays(A.people.find(x=>x.key===S.open),doc);const k=el.dataset.k,v=doc.exd[k]||'';let i0=v==='in'||v==='both',o0=v==='out'||v==='both';if(el.dataset.w==='in')i0=el.checked;else o0=el.checked;const nv=i0&&o0?'both':i0?'in':o0?'out':'';if(nv)doc.exd[k]=nv;else delete doc.exd[k];save('nobreak/'+id,doc)}
   else if(c==='excuse'){const id=S.month,doc=clone(S.nb[id]||{month:id,items:{}});doc.items=doc.items||{};doc.ex=Object.assign({},doc.ex);if(el.value)doc.ex[el.dataset.k]=el.value;else delete doc.ex[el.dataset.k];save('nobreak/'+id,doc)}
   else if(c==='hqswho'){S.hq.swho=el.value;S.hq.n=150;render()}
   else if(c==='hqstab'){S.hq.stab=el.value;S.hq.n=150;render()}
