@@ -3419,10 +3419,10 @@ function radarAnim(){if(window.matchMedia&&matchMedia('(prefers-reduced-motion: 
     draw(t0);requestAnimationFrame(draw)})}
 function renderDrawer(){
   document.querySelectorAll('#main tr.cur').forEach(r=>r.classList.remove('cur'));
-  if(S.open&&(S.view==='overview'||S.view==='performance'||S.view==='compare'))document.querySelectorAll('#main tr[data-act="open"]').forEach(r=>{if(r.dataset.key===S.open){r.classList.add('cur');r.scrollIntoView({block:'nearest'})}});
+  if(S.open&&(S.view==='overview'||S.view==='performance'||S.view==='compare'||S.view==='reports'))document.querySelectorAll('#main tr[data-act="open"]').forEach(r=>{if(r.dataset.key===S.open){r.classList.add('cur');r.scrollIntoView({block:'nearest'})}});
   const dr=$('#drawer'),sh=$('#shade');
   const p=S.open&&A&&A.people.find(x=>x.key===S.open);
-  if(!p||(S.view!=='overview'&&S.view!=='performance'&&S.view!=='schedules'&&S.view!=='compare')){dr.hidden=true;sh.hidden=true;const cz=$('#cardset');if(cz){cz.hidden=true;cz.innerHTML=''}return}
+  if(!p||(S.view!=='overview'&&S.view!=='performance'&&S.view!=='schedules'&&S.view!=='compare'&&S.view!=='reports')){dr.hidden=true;sh.hidden=true;const cz=$('#cardset');if(cz){cz.hidden=true;cz.innerHTML=''}return}
   const L=LEVEL[p.level],s=p.sum,cfg=A.cfg;
   const R=personReport(p),tp=p.noSched?[1,2]:[1,13,2,3,5,6,7,9],more=R.stats.filter((x,j)=>j>0&&(j<14||(j>=18&&x[1]))&&!tp.includes(j));
   let h=`<div class="rband"><div><h2>${esc(p.name)}${posBadge(posOf(p.name,p.role))}</h2><div class="rsub">${esc(R.sub)}</div><div class="rsub kbdhint">${T('← → previous or next person')}</div></div>
@@ -3887,7 +3887,7 @@ function accPanel(){const D=accData();
   return `<section class="panel" style="margin-top:14px"><div class="hd"><div><h2>${T('For accounting')}</h2><div class="sub">${T('Hours worked and days of leave per person, {p}.',{p:D.per})} ${accNote()}</div></div>
     <div class="row"><button class="btn primary small" data-act="dlacx"${S.dl?'':' disabled'}>${T('Download Excel')}</button><button class="btn small" data-act="dlacp"${S.dl?'':' disabled'}>${T('Download PDF')}</button></div></div>
     <div class="scroll"><table class="people acc"><thead><tr>${D.head.map((h,i)=>i===2?'':`<th${i>2?' class="n"':''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>
-    ${D.rows.map(r=>`<tr>${D.vals(r,false).map((v,i)=>i===0?`<td><b>${esc(v)}</b>${r.pos?posBadge(r.pos):''}</td>`:i===1?`<td>${r.p.noSched?`<span class="sub">${esc(v)}</span>`:dchip(v)}</td>`:i===2?'':`<td class="n">${v===''||v==null?'<span class="sub">—</span>':esc(v)}</td>`).join('')}</tr>`).join('')}
+    ${D.rows.map(r=>`<tr tabindex="0" data-act="open" data-key="${esc(r.p.key)}">${D.vals(r,false).map((v,i)=>i===0?`<td><b>${esc(v)}</b>${r.pos?posBadge(r.pos):''}</td>`:i===1?`<td>${r.p.noSched?`<span class="sub">${esc(v)}</span>`:dchip(v)}</td>`:i===2?'':`<td class="n">${v===''||v==null?'<span class="sub">—</span>':esc(v)}</td>`).join('')}</tr>`).join('')}
     <tr class="tot">${D.tvals(false).map((v,i)=>i===2?'':`<td${i>2?' class="n"':''}><b>${esc(v)}</b></td>`).join('')}</tr></tbody></table></div></section>`}
 function downloadAccExcel(){if(!window.XLSX){toast(T('The Excel writer didn’t load. Reload the page and try again.'));return}
   const D=accData(),aoa=[[T('Balagan · hours and leave for accounting')],[D.per],[accNote()],[],D.head].concat(D.rows.map(r=>D.vals(r,true)),[D.tvals(true)]);
@@ -5235,7 +5235,7 @@ document.addEventListener('keydown',e=>{
       if(x){e.preventDefault();if(t&&t.blur)t.blur();S.pcard={n:x.name,d:x.dept,src:'f'};S.pcardNew=true;S.curScroll=true;renderPcard();const c=$('#pcard .hbtn');if(c)c.focus({preventScroll:true});return}}}
   /* on Performance and Overview the space bar opens the full card of the chosen row (the one the arrow keys moved to, or the last one opened,
      or the first); space again closes it */
-  if(e.key===' '&&(S.view==='performance'||S.view==='overview'||S.view==='compare')&&!(S.open&&!$('#drawer').hidden)&&!S.authbox&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.shiftKey){
+  if(e.key===' '&&(S.view==='performance'||S.view==='overview'||S.view==='compare'||S.view==='reports')&&!(S.open&&!$('#drawer').hidden)&&!S.authbox&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.shiftKey){
     const t=e.target,tg0=t&&t.tagName;if(tg0!=='INPUT'&&tg0!=='SELECT'&&tg0!=='TEXTAREA'&&tg0!=='BUTTON'&&!(t&&t.isContentEditable)){
       const rows=[...document.querySelectorAll('#main tr[data-act="open"]')],tr=(t&&t.closest&&t.closest('#main tr[data-act="open"]'))||rows.find(r=>r.dataset.key===S.perfKey)||rows[0];
       if(tr){e.preventDefault();S.perfKey=tr.dataset.key;S.open=tr.dataset.key;renderDrawer();return}}}
