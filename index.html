@@ -890,7 +890,13 @@ td .mn{color:var(--muted);font-size:12px}
 .tile span{font-size:11px;line-height:1.25;color:var(--muted)}
 .rtable{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:auto}
 .rtable th{background:var(--bc,var(--b0));color:var(--on-band)}
-.rtable thead th{position:sticky;top:0;z-index:3}
+.rtable thead th{position:sticky;top:var(--rbh,0px);z-index:3}
+/* once the card's name band has scrolled away, a slim bar with the name stays at the top (the browser keeps it there; it only slides in) */
+#drawer .rmini{position:sticky;top:0;height:0;z-index:10}
+#drawer .rmini-in{position:absolute;left:0;right:0;top:0;background:var(--bc,var(--b0));color:var(--on-band);padding:9px 16px 9px 18px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;
+  box-shadow:0 6px 14px -6px rgba(0,0,0,.55);transform:translateY(-105%);transition:transform .18s ease;pointer-events:none}
+#drawer.minion .rmini-in{transform:none;pointer-events:auto}
+#drawer .rmini-in b{font-family:var(--display);font-size:19px;color:var(--on-band)}#drawer .rmini-in .posb{margin-left:0}#drawer .rmini-in span.rs{font-size:12.5px;color:var(--on-band-muted);flex-basis:100%}
 .offsum{display:flex;flex-direction:column;gap:6px;margin:8px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--surface) 80%,transparent)}
 .offsum>div{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.offsum>div>b{font-size:12.5px;min-width:9.5em}.offsum>div>span{display:flex;flex-wrap:wrap;gap:5px}
 .ofc{display:inline-flex;gap:5px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:1px 9px;font:600 12px var(--mono);color:var(--muted)}
@@ -902,7 +908,7 @@ td .mn{color:var(--muted);font-size:12px}
 table.acc tr.tot td{border-top:2px solid var(--line)}
 .ptc .pmid{color:var(--amber,#E0A93A)}.ptc .pbad{color:var(--red,#E5484D)}.rtable{max-height:calc(100dvh - 120px)}
 .rtable.fitx{overflow:visible;max-height:none}
-.rtwrap{position:relative}.rtable.rthead{position:sticky;top:0;z-index:6;overflow:hidden;max-height:none;border-color:transparent;background:transparent;pointer-events:none;border-bottom:0;border-radius:10px 10px 0 0}
+.rtwrap{position:relative}.rtable.rthead{position:sticky;top:var(--rbh,0px);z-index:6;overflow:hidden;max-height:none;border-color:transparent;background:transparent;pointer-events:none;border-bottom:0;border-radius:10px 10px 0 0}
 .rtable.rthead thead th{position:static}.rtable.cloned{max-height:none;overflow-y:hidden}.rtable.cloned>table>thead{visibility:hidden}.rtable.fitx thead th:first-child{border-top-left-radius:9px}.rtable.fitx thead th:last-child{border-top-right-radius:9px}.rtable thead th.stuck{box-shadow:0 6px 10px -6px rgba(0,0,0,.55)}
 @media (max-width:560px){.rissues thead{display:none}.rissues tr{display:flex;flex-wrap:wrap;gap:6px 8px;padding:9px 10px;border-bottom:1px solid var(--line)}.rissues tr:last-child{border-bottom:0}
   .rissues td{border:0;padding:0;background:none!important}.rissues td:nth-child(2){flex-basis:100%}.rissues .exb{justify-self:start}}
@@ -3425,7 +3431,7 @@ function renderDrawer(){
   if(!p||(S.view!=='overview'&&S.view!=='performance'&&S.view!=='schedules'&&S.view!=='compare'&&S.view!=='reports')){dr.hidden=true;sh.hidden=true;const cz=$('#cardset');if(cz){cz.hidden=true;cz.innerHTML=''}return}
   const L=LEVEL[p.level],s=p.sum,cfg=A.cfg;
   const R=personReport(p),tp=p.noSched?[1,2]:[1,13,2,3,5,6,7,9],more=R.stats.filter((x,j)=>j>0&&(j<14||(j>=18&&x[1]))&&!tp.includes(j));
-  let h=`<div class="rband"><div><h2>${esc(p.name)}${posBadge(posOf(p.name,p.role))}</h2><div class="rsub">${esc(R.sub)}</div><div class="rsub kbdhint">${T('← → previous or next person')}</div></div>
+  let h=`<div class="rmini" aria-hidden="true"><div class="rmini-in"><b>${esc(p.name)}</b>${posBadge(posOf(p.name,p.role))}<span class="rs">${esc(R.sub)}</span></div></div><div class="rband"><div><h2>${esc(p.name)}${posBadge(posOf(p.name,p.role))}</h2><div class="rsub">${esc(R.sub)}</div><div class="rsub kbdhint">${T('← → previous or next person')}</div></div>
     <div class="row"><span class="rstatus rs-${L[1]}">${T(L[0])}</span>${window.__store&&!p.noSched?`<button class="hbtn" data-act="gsone"${S.gsBusy?' disabled':''} title="${T('Fetch this person’s schedule from Google Sheets again')}">${S.gsBusy?T('Fetching…'):'⟳ '+T('Refresh schedule')}</button>`:''}${p.noSched?'':`<button class="hbtn${S.radar?' on':''}" data-act="radar" aria-pressed="${!!S.radar}" title="${T('Show the status chart')}">⬡ ${T('Stats')}</button>`}<button class="hbtn${S.cardSet?' on':''}" data-act="cardset" aria-pressed="${!!S.cardSet}">⚙ ${T('Settings')}</button>${S.dl?`<button class="hbtn" data-act="dlperson">${T('Download PDF')}</button>`:''}${S.view==='schedules'&&!p.noSched?`<button class="hbtn" data-act="pcsmall" title="${T('Back to the small card')}">▭ ${T('Small card')}</button>`:''}<button class="hbtn" data-act="close" id="dclose">${T('Close')}</button></div></div>
     <div class="dbody"><div class="tiles">${tp.map(j=>`<div class="tile"><b>${esc(R.stats[j][1])}</b><span>${esc(R.stats[j][0])}</span></div>`).join('')}</div>
     ${p.noSched?'':(dp=>{const st=dp&&dp.start,fd=st?(d=>d.getUTCDate()+' '+MONS[LANG][d.getUTCMonth()]+' '+d.getUTCFullYear())(new Date(st+'T00:00:00Z')):'';
@@ -4386,6 +4392,9 @@ addEventListener('resize',()=>{clearTimeout(unclutter.t);unclutter.t=setTimeout(
 /* a table in the card that fits its width lets its headings stick to the top of the card itself (natively, smooth);
    one wider than the card scrolls inside its own box, with the headings stuck to the top of that box */
 function stickHeads(){const box=$('#drawer');if(!box||box.hidden)return;
+  {const b=box.querySelector('.rband'),mi=box.querySelector('.rmini-in');if(b&&mi){const mh=Math.round(mi.offsetHeight);box.style.setProperty('--rbh',mh+'px');
+    if(stickHeads.io)stickHeads.io.disconnect();box.classList.remove('minion');
+    if(window.IntersectionObserver){stickHeads.io=new IntersectionObserver(es=>{for(const x of es)box.classList.toggle('minion',!x.isIntersecting)},{root:box,rootMargin:`-${mh}px 0px 0px 0px`,threshold:0});stickHeads.io.observe(b)}}}
   box.querySelectorAll('.rtable:not(.rthead)').forEach(rt=>{const t=rt.querySelector(':scope>table'),th=t&&t.querySelector(':scope>thead');if(!t||!th)return;
     let wrap=rt.parentElement;if(!wrap.classList.contains('rtwrap')){wrap=document.createElement('div');wrap.className='rtwrap';rt.parentNode.insertBefore(wrap,rt);wrap.appendChild(rt)}
     wrap.querySelectorAll(':scope>.rthead').forEach(x=>x.remove());rt.classList.remove('fitx','cloned');
