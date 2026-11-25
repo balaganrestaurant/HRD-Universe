@@ -644,6 +644,11 @@ body.pc-open .fside{flex-direction:row;flex-wrap:wrap;gap:12px 20px}body.pc-open
 .setpane{min-width:0;display:flex;flex-direction:column;gap:10px}
 /* each option in its own field; its explanation shows when the field is pointed at or chosen with the keyboard */
 .setpane .bd.optl{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:10px!important}
+/* a field holding one labelled box: the name on the left, the box on the right, like the rules */
+.optf.optlab>label{display:flex!important;flex-direction:row!important;align-items:center;justify-content:space-between;gap:8px 18px;flex-wrap:wrap;font-size:15.5px;font-weight:600;color:var(--ink);margin:0}
+.optf.optlab>label>input:not([type=checkbox]):not([type=radio]),.optf.optlab>label>select,.optf.optlab>label>textarea{flex:0 1 52%;min-width:200px;font-weight:400}
+.optf>.row,.optf>.tpw{margin:0}.optf>.tpw{border-top:0!important;padding-top:0!important}
+.optf>.btn{align-self:flex-start}
 .optf{border:1px solid var(--line);border-radius:14px;padding:13px 16px;background:color-mix(in srgb,var(--surface) 78%,transparent);transition:border-color .15s,box-shadow .15s,background .15s;outline:none;display:flex;flex-direction:column;gap:8px}
 .optf:hover{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));background:color-mix(in srgb,var(--surface) 92%,transparent)}
 .optf:focus,.optf:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent),0 6px 18px -8px rgba(0,0,0,.5)}
@@ -3381,10 +3386,10 @@ function radarAnim(){if(window.matchMedia&&matchMedia('(prefers-reduced-motion: 
     draw(t0);requestAnimationFrame(draw)})}
 function renderDrawer(){
   document.querySelectorAll('#main tr.cur').forEach(r=>r.classList.remove('cur'));
-  if(S.open&&(S.view==='overview'||S.view==='performance'))document.querySelectorAll('#main tr[data-act="open"]').forEach(r=>{if(r.dataset.key===S.open){r.classList.add('cur');r.scrollIntoView({block:'nearest'})}});
+  if(S.open&&(S.view==='overview'||S.view==='performance'||S.view==='compare'))document.querySelectorAll('#main tr[data-act="open"]').forEach(r=>{if(r.dataset.key===S.open){r.classList.add('cur');r.scrollIntoView({block:'nearest'})}});
   const dr=$('#drawer'),sh=$('#shade');
   const p=S.open&&A&&A.people.find(x=>x.key===S.open);
-  if(!p||(S.view!=='overview'&&S.view!=='performance'&&S.view!=='schedules')){dr.hidden=true;sh.hidden=true;const cz=$('#cardset');if(cz){cz.hidden=true;cz.innerHTML=''}return}
+  if(!p||(S.view!=='overview'&&S.view!=='performance'&&S.view!=='schedules'&&S.view!=='compare')){dr.hidden=true;sh.hidden=true;const cz=$('#cardset');if(cz){cz.hidden=true;cz.innerHTML=''}return}
   const L=LEVEL[p.level],s=p.sum,cfg=A.cfg;
   const R=personReport(p),tp=p.noSched?[1,2]:[1,13,2,3,5,6,7,9],more=R.stats.filter((x,j)=>j>0&&(j<14||(j>=18&&x[1]))&&!tp.includes(j));
   let h=`<div class="rband"><div><h2>${esc(p.name)}${posBadge(posOf(p.name,p.role))}</h2><div class="rsub">${esc(R.sub)}</div><div class="rsub kbdhint">${T('← → previous or next person')}</div></div>
@@ -3719,7 +3724,7 @@ function viewCompare(){
   <section class="panel"><div class="hd"><div><h2>${T('Month by month')}</h2><div class="sub">${T('Each person, month by month. Months are compared over the days that have both a schedule and punches.')}</div></div>
     <div class="filters"><label>${T('Compare')} <select id="cmp" data-chg="cmp">${Object.keys(METRICS).map(k=>`<option value="${k}"${S.cmp===k?' selected':''}>${T(METRICS[k][0])}</option>`).join('')}</select></label></div></div>
     <div class="scroll"><table><thead><tr><th>${T('Name')}</th><th>${T('Dept')}</th>${ms.map((m,i)=>`<th class="n">${monthLabel(m)}<br><span style="text-transform:none;letter-spacing:0;font-weight:400">${T('days')} ${runs[i].from}–${runs[i].to}</span></th>`).join('')}${n>1?'<th class="n">'+T('Change')+'</th>':''}</tr></thead><tbody>
-    ${list.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${dchip(r.dept)}</td>${r.v.map((v,i)=>`<td class="n">${v==null?'<span class="sub">—</span>':v?`<b>${M[2](v)}</b>`:'<span class="sub">0</span>'}${v==null?'':` <span class="sub">/ ${r.sh[i]} ${PL(r.sh[i],'shift')}</span>`}</td>`).join('')}${n>1?`<td class="n">${delta(r.v[n-2],r.v[n-1])}</td>`:''}</tr>`).join('')}
+    ${list.map(r=>{const k=r.dept+'|'+r.name,has=A&&A.people.some(x=>x.key===k);return `<tr${has?` tabindex="0" data-act="open" data-key="${esc(k)}"`:''}><td><b>${esc(r.name)}</b></td><td>${dchip(r.dept)}</td>${r.v.map((v,i)=>`<td class="n">${v==null?'<span class="sub">—</span>':v?`<b>${M[2](v)}</b>`:'<span class="sub">0</span>'}${v==null?'':` <span class="sub">/ ${r.sh[i]} ${PL(r.sh[i],'shift')}</span>`}</td>`).join('')}${n>1?`<td class="n">${delta(r.v[n-2],r.v[n-1])}</td>`:''}</tr>`}).join('')}
     <tr><td><b>${T('Everyone')}</b></td><td></td>${tot.map(v=>`<td class="n"><b>${M[2](v)}</b></td>`).join('')}${n>1?`<td class="n">${delta(tot[n-2],tot[n-1])}</td>`:''}</tr>
     </tbody></table></div></section>`;
 }
@@ -4015,7 +4020,10 @@ function optCards(html){const d=document.createElement('div');d.innerHTML=html;
   d.querySelectorAll('section.panel>.bd').forEach(bd=>{const kids=[...bd.children];if(!kids.length)return;
     const single=kids.every(k=>k.matches('label,.rule,.nsbox,span.sub,div.sub'))&&kids.some(k=>k.matches('label,.rule,.nsbox'));
     const mk=()=>{const w=document.createElement('div');w.className='optf';w.setAttribute('tabindex','-1');return w};
-    if(!single){const w=mk();kids.forEach(k=>w.appendChild(k));bd.appendChild(w);bd.classList.add('optl');return}
+    /* a form or a mixed box: every part gets its own field too (a note under a part joins it); lists stay as they are */
+    if(!single){let last=null;kids.forEach(k=>{if(k.matches('table,.scroll,.rtable,.hscroll,ol,ul')){last=null;return}
+        if(k.matches('span.sub,div.sub,small.sub,p.sub')){if(last){k.classList.add('onote');last.appendChild(k)}return}
+        const w=mk();if(k.matches('label')&&!k.matches('.chk'))w.classList.add('optlab');bd.insertBefore(w,k);w.appendChild(k);last=w});bd.classList.add('optl');return}
     let last=null;kids.forEach(k=>{if(k.matches('span.sub,div.sub')&&last){k.classList.add('onote');last.appendChild(k);return}
       const w=mk();bd.insertBefore(w,k);w.appendChild(k);last=w});bd.classList.add('optl')});
   return d.innerHTML}
@@ -5086,7 +5094,7 @@ document.addEventListener('keydown',e=>{
       if(x){e.preventDefault();if(t&&t.blur)t.blur();S.pcard={n:x.name,d:x.dept,src:'f'};S.pcardNew=true;S.curScroll=true;renderPcard();const c=$('#pcard .hbtn');if(c)c.focus({preventScroll:true});return}}}
   /* on Performance and Overview the space bar opens the full card of the chosen row (the one the arrow keys moved to, or the last one opened,
      or the first); space again closes it */
-  if(e.key===' '&&(S.view==='performance'||S.view==='overview')&&!(S.open&&!$('#drawer').hidden)&&!S.authbox&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.shiftKey){
+  if(e.key===' '&&(S.view==='performance'||S.view==='overview'||S.view==='compare')&&!(S.open&&!$('#drawer').hidden)&&!S.authbox&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.shiftKey){
     const t=e.target,tg0=t&&t.tagName;if(tg0!=='INPUT'&&tg0!=='SELECT'&&tg0!=='TEXTAREA'&&tg0!=='BUTTON'&&!(t&&t.isContentEditable)){
       const rows=[...document.querySelectorAll('#main tr[data-act="open"]')],tr=(t&&t.closest&&t.closest('#main tr[data-act="open"]'))||rows.find(r=>r.dataset.key===S.perfKey)||rows[0];
       if(tr){e.preventDefault();S.perfKey=tr.dataset.key;S.open=tr.dataset.key;renderDrawer();return}}}
@@ -5102,7 +5110,7 @@ document.addEventListener('keydown',e=>{
     const t=e.target;e.preventDefault();const L=SECTIONS.length,i=secIdx(S.view),ni=i<0?(e.shiftKey?L-1:0):((i+(e.shiftKey?-1:1))%L+L)%L;
     if(SECTIONS[ni]){if(t&&t.blur)t.blur();if(S.pcard){S.pcard=null;renderPcard()}if(S.open){S.open=null;S.rowSel=null;renderDrawer()}go(SECTIONS[ni][0])}return}
   if(S.view==='schedules'&&schedKey(e))return;
-  if(S.view==='setup'&&!S.pcard&&!S.open&&!S.authbox&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.shiftKey&&setupKey(e))return;
+  if(S.view==='setup'&&!S.pcard&&!(S.open&&!$('#drawer').hidden)&&!S.authbox&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.shiftKey&&setupKey(e))return;
   const tg=e.target&&e.target.tagName;
   if(S.view!=='globe'&&!S.open&&!S.exEdit&&!S.imp&&!S.panel&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&tg!=='INPUT'&&tg!=='SELECT'&&tg!=='TEXTAREA'){
     if(e.key==='Escape'&&S.view==='schedules'&&S.psel){S.psel=null;markCur();return}
