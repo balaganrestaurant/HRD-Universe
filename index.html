@@ -3927,14 +3927,16 @@ async function offer(filename,data){
 }
 /* ---- one report per person: used for a sheet each in Excel and a page each in the PDF ---- */
 /* positions: from the schedule spreadsheet (the column left of the names) or set on a person's card; they order the lists */
-const POS_DEF=['GM','General Manager','Manager','Assistant Manager','Executive Chef','Head Chef','Sous Chef','J. Sous Chef','Chef de Partie','SPV Floor','Supervisor','Captain','Head Bartender','Head Waiter','S.Waiter','Senior Waiter','Hot Kitchen','Cold Kitchen','Pastry','Cook','Commis','Bartender','Barista','Barback','Waiter','Waitress','Runner','Host','Shisha','Purchasing','Cleaning Service','Steward','Dishwasher','Trainee'];
+const POS_DEF=['GM','General Manager','Manager','Assistant Manager','Executive Chef','Head Chef','Sous Chef','J. Sous Chef','Chef de Partie','SPV Floor','Head Bar','Supervisor','Captain','Head Bartender','Head Waiter','S.Waiter','Senior Waiter','Hot Kitchen','Cold Kitchen','Pastry','Cook','Commis','Bartender','Barista','Barback','Waiter','Waitress','Runner','Host','Shisha','Purchasing','Cleaning Service','Steward','Dishwasher','Trainee'];
 /* a position written in any usual way gives the same key: "Sr Waiter", "Sr. Waiter", "S.Waiter", "Snr Waiter" and
    "Senior Waiter" are one position; so are "J. Sous Chef", "Jr Sous Chef" and "Junior Sous Chef", or "SPV" and "Supervisor" */
 const POS_ABBR={sr:'senior',snr:'senior',sen:'senior',jr:'junior',jnr:'junior',jun:'junior',spv:'supervisor',supv:'supervisor',sup:'supervisor',asst:'assistant',ast:'assistant',mgr:'manager',mngr:'manager',exec:'executive',hd:'head',cdp:'chefdepartie'};
 const pk=s=>{const t=String(s||'').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
   return t.map((w,i)=>POS_ABBR[w]||(t.length>1&&i<t.length-1&&(w==='s'||w==='j'||w==='a'||w==='h')?{s:'senior',j:'junior',a:'assistant',h:'head'}[w]:w)).join('')};
 const posList=()=>(S.cfg&&Array.isArray(S.cfg.posOrder)&&S.cfg.posOrder.length?S.cfg.posOrder:POS_DEF);
-function posRank(pos){const k=pk(pos);if(!k)return 900;const L=posList().map(pk);let i=L.indexOf(k);if(i>=0)return i;
+function posRank(pos){const k=pk(pos);if(!k)return 900;const PL0=posList(),L=PL0.map(pk);let i=L.indexOf(k);if(i>=0)return i;
+  /* a position not on the list but clearly a head or supervisor (Head Bar, Head Shisha…) ranks with the first supervisor-level position, not after the crew */
+  {const t=posTier(pos);if(t==='lead'||t==='sup'){const j=PL0.findIndex(x=>posTier(x)===t);if(j>=0)return j+.5}}
   let best=-1,bl=0;L.forEach((x,j)=>{if(x.length>2&&k.includes(x)&&x.length>bl){best=j;bl=x.length}});return best>=0?best+.5:800}
 function posOf(name,role){const o=((S.cfg&&S.cfg.pos)||{})[key(name)];return o!=null&&o!==''?String(o):String(role||'')}
 function posTier(pos){const k=pk(pos);if(!k)return '';if(/^gm$|manager|headchef|executive/.test(k))return 'lead';if(/sous|spv|supervis|captain|^head|^seniorwaiter/.test(k))return 'sup';if(/^senior/.test(k))return 'senior';return 'crew'}
