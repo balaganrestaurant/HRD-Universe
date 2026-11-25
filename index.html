@@ -2119,6 +2119,11 @@ function analyze(D){
       else if(wNo&&r.cls==='noshow'){r.cls='ok';r.in=r.start;r.out=r.end;r.late=0;r.isLate=false;r.past=0;r.ot=0;r.exIn=r.exOut=true;r.note=r.note.filter(n=>n.k!=='noPunch');r.note.push({k:'excused',w:'inout'})}}}
     /* shifts worked without a break: the break time is added to the overtime */
     {const nbm=D.nobreak||{};for(const r of rows){if((r.cls==='ok'||r.cls==='unsched')&&nbm[e.dept+'|'+e.name+'|'+(Math.round((r.d0-m0)/DAY)+1)]){r.nb=true;r.note.push({k:'noBreak',m:cfg.nbMin==null?60:+cfg.nbMin})}}}
+    /* a day off is only "worked" with punches no shift uses: a clock-in late in the evening for the next day's night shift (N23 starting
+       the night before) belongs to that shift, not to the day off */
+    {const used=new Set();rows.forEach(r=>{if(r.cls!=='off'&&r.cls!=='offwork'){if(r.in!=null)used.add(r.in);if(r.out!=null)used.add(r.out)}});
+      rows.forEach(r=>{if(r.cls!=='offwork')return;const w=ownPunches(P,r.d0).filter(t=>!used.has(t));
+        if(!w.length){r.cls='off';r.note=r.note.filter(n=>n.k!=='offPunch')}else{const nt=r.note.find(n=>n.k==='offPunch');if(nt)nt.times=w.map(hm).join(', ')}})}
     people.push(summarize({key:e.dept+'|'+e.name,name:e.name,dept:e.dept,role:e.role,machine:lk.m,also:lk.also||[],auto:lk.auto||[],link:lk.kind,rows,P},cfg,exMap,D.lang));
   }
   cfg=cfg0;ctx.cfg=cfg0;
