@@ -900,10 +900,18 @@ td .mn{color:var(--muted);font-size:12px}
   box-shadow:0 6px 14px -6px rgba(0,0,0,.55);transform:translateY(-105%);transition:transform .18s ease;pointer-events:none}
 #drawer.minion .rmini-in{transform:none;pointer-events:auto}
 #drawer .rmini-in b{font-family:var(--display);font-size:19px;color:var(--on-band)}#drawer .rmini-in .posb{margin-left:0}#drawer .rmini-in span.rs{margin-left:auto;text-align:right;font-size:15.5px;font-weight:600;color:var(--on-band);opacity:.92}
-#drawer .rmini-in .rmset{flex:none;font-size:17px;line-height:1;padding:4px 7px;margin-left:auto}#drawer .rmini-in .rmset+span.rs{margin-left:0}
+#drawer .rmini-in .rmset{flex:none;font-size:26px;line-height:1;padding:0 2px;margin-left:auto;border:0;background:none;opacity:.92}#drawer .rmini-in .rmset:hover,#drawer .rmini-in .rmset.on{opacity:1;background:none;text-shadow:0 0 8px rgba(255,255,255,.55)}#drawer .rmini-in .rmset+span.rs{margin-left:0}
 @media (max-width:560px){#drawer .rmini-in{flex-wrap:nowrap;gap:8px;padding:8px 12px 8px 14px}#drawer .rmini-in b{font-size:17px;white-space:nowrap}#drawer .rmini-in .posb{flex:none}#drawer .rmini-in span.rs{flex:0 1 auto;min-width:0;font-size:11px;line-height:1.25;font-weight:600}}
-.offsum{display:flex;flex-direction:column;gap:6px;margin:8px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--surface) 80%,transparent)}
-.offsum>div{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}.offsum>div>b{font-size:12.5px;min-width:9.5em}.offsum>div>span{display:flex;flex-wrap:wrap;gap:5px}
+.offsum{display:grid;grid-template-columns:max-content repeat(var(--n,4),max-content);gap:6px;align-items:center;margin:8px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--surface) 80%,transparent)}
+.offsum>div,.offsum>div>span{display:contents}
+.offsum>div>b{grid-column:1;font-size:12.5px;margin-right:8px;white-space:nowrap}
+.offsum .ofc{justify-content:space-between;gap:8px}
+.offsum .dprow>span>*{grid-column:2/-1;justify-self:start}
+/* in the card's name band, on the right of the name; the chips columns line up from row to row */
+.rband>.row{flex-basis:100%}
+.rband .offsum{margin:0;--ink:#fff;--muted:rgba(255,255,255,.78);--line:rgba(255,255,255,.28);color:#fff;background:rgba(0,0,0,.3);border-color:rgba(255,255,255,.2)}
+.rband .offsum .sub{color:rgba(255,255,255,.75)}.rband .offsum .ofc.zero{opacity:.6}.rband .offsum .ofc{background:rgba(0,0,0,.18)}
+@media (max-width:560px){.offsum{grid-template-columns:repeat(var(--n,4),max-content);padding:9px 10px;gap:5px}.offsum>div>b{grid-column:1/-1;margin:3px 0 0}.offsum>div:first-child>b{margin-top:0}.offsum .dprow>span>*{grid-column:1/-1}.rband .offsum{flex-basis:100%}}
 .ofc{display:inline-flex;gap:5px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:1px 9px;font:600 12px var(--mono);color:var(--muted)}
 .ofc b{color:var(--ink)}
 .ofc[class*=" k-"]{border-color:color-mix(in srgb,var(--kc) 55%,transparent);color:color-mix(in srgb,var(--kc) 75%,var(--ink))}
@@ -3307,6 +3315,11 @@ function saveExplained(k,note){
   if(note!=null)doc.items.push({k,note:String(note).trim().slice(0,200),at:new Date().toISOString().slice(0,10)});
   S.exEdit=null;save('explained/'+S.month,doc);
 }
+/* a department tab or filter was picked while a full card is open: the card moves to that department's first person (keeping the place you were reading) */
+function cardToDept(d,nm){const dr=$('#drawer');if(!S.open||!dr||dr.hidden||!A||!d||d==='all')return;const cur=A.people.find(x=>x.key===S.open);if(cur&&cur.dept===d&&!nm)return;
+  let p=nm?A.people.find(x=>!x.noSched&&x.dept===d&&key(x.name)===key(nm)):null;
+  if(!p){const k=cardOrder().find(k=>{const x=A.people.find(y=>y.key===k);return x&&x.dept===d});p=k?A.people.find(x=>x.key===k):A.people.find(x=>x.dept===d&&!x.noSched)}
+  if(!p||p.key===S.open)return;const y=dr.scrollTop;S.open=p.key;S.rowSel=null;renderDrawer();const d2=$('#drawer');if(d2)d2.scrollTop=y}
 /* the earlier whole-month excuse becomes one tick per date it actually excused (nothing else changes), so a single date can then be unticked */
 function exMonthToDays(p,doc){const ex=doc.ex||{};if(!p||!ex[p.key])return;doc.ex=Object.assign({},ex);delete doc.ex[p.key];doc.exd=Object.assign({},doc.exd);
   for(const r of p.rows){if(!r.start||!(r.exIn||r.exOut))continue;const k=p.key+'|'+rowDay(r);if(doc.exd[k])continue;doc.exd[k]=r.exIn&&r.exOut?'both':r.exIn?'in':'out'}}
@@ -3464,12 +3477,12 @@ function renderDrawer(){
   if(!p||(S.view!=='overview'&&S.view!=='performance'&&S.view!=='schedules'&&S.view!=='compare'&&S.view!=='reports')){dr.hidden=true;sh.hidden=true;const cz=$('#cardset');if(cz){cz.hidden=true;cz.innerHTML=''}return}
   const L=LEVEL[p.level],s=p.sum,cfg=A.cfg;
   const R=personReport(p),tp=p.noSched?[1,2]:[1,13,2,3,5,6,7,9],more=R.stats.filter((x,j)=>j>0&&(j<14||(j>=18&&x[1]))&&!tp.includes(j));
-  let h=`<div class="rmini"><div class="rmini-in"><b aria-hidden="true">${esc(p.name)}</b>${posBadge(posOf(p.name,p.role))}<button class="hbtn rmset${S.cardSet?' on':''}" data-act="cardset" aria-pressed="${!!S.cardSet}" title="${T('Settings')}" aria-label="${T('Settings')}">⚙</button><span class="rs" aria-hidden="true">${esc(R.sub)}</span></div></div><div class="rband"><div><h2>${esc(p.name)}${posBadge(posOf(p.name,p.role))}</h2><div class="rsub">${esc(R.sub)}</div><div class="rsub kbdhint">${T('← → previous or next person')}</div></div>
+  let h=`<div class="rmini"><div class="rmini-in"><b aria-hidden="true">${esc(p.name)}</b>${posBadge(posOf(p.name,p.role))}<button class="hbtn rmset${S.cardSet?' on':''}" data-act="cardset" aria-pressed="${!!S.cardSet}" title="${T('Settings')}" aria-label="${T('Settings')}">⚙</button><span class="rs" aria-hidden="true">${esc(R.sub)}</span></div></div><div class="rband"><div><h2>${esc(p.name)}${posBadge(posOf(p.name,p.role))}</h2><div class="rsub">${esc(R.sub)}</div><div class="rsub kbdhint">${T('← → previous or next person')}</div></div>${p.noSched?'':(()=>{const c=offCounts(p.rows),y=yearOffCounts(p.name,String(A.y),S.month),k=stKeys([c,y]);
+      return `<div class="offsum" style="--n:${k.length}"><div><b>${T('Leave and days off')} · ${esc(rangeLabel(A.from,A.to))}</b><span>${offChipsHtml(c,k)}</span></div><div><b>${T('This year so far')}</b><span>${offChipsHtml(y,k)}</span></div>${(dp=>`<div class="dprow"><b>${T('DP still to take')}</b><span>${dp&&dp.left!=null?`<span class="ofc dpl${dp.left<0?' neg':''}"><b>${dp.left}</b> ${T('of {e} earned',{e:dp.earned})}</span>`:`<span class="sub">${T('Fill in the first day of work to see it')}</span>`}</span></div>`)(dpOf(p))}</div>`})()}
     <div class="row"><span class="rstatus rs-${L[1]}">${T(L[0])}</span>${window.__store&&!p.noSched?`<button class="hbtn" data-act="gsone"${S.gsBusy?' disabled':''} title="${T('Fetch this person’s schedule from Google Sheets again')}">${S.gsBusy?T('Fetching…'):'⟳ '+T('Refresh schedule')}</button>`:''}${p.noSched?'':`<button class="hbtn${S.radar?' on':''}" data-act="radar" aria-pressed="${!!S.radar}" title="${T('Show the status chart')}">⬡ ${T('Stats')}</button>`}<button class="hbtn${S.cardSet?' on':''}" data-act="cardset" aria-pressed="${!!S.cardSet}">⚙ ${T('Settings')}</button>${S.dl?`<button class="hbtn" data-act="dlperson">${T('Download PDF')}</button>`:''}${S.view==='schedules'&&!p.noSched?`<button class="hbtn" data-act="pcsmall" title="${T('Back to the small card')}">▭ ${T('Small card')}</button>`:''}<button class="hbtn" data-act="close" id="dclose">${T('Close')}</button></div></div>
     <div class="dbody"><div class="tiles">${tp.map(j=>`<div class="tile"><b>${esc(R.stats[j][1])}</b><span>${esc(R.stats[j][0])}</span></div>`).join('')}</div>
     ${p.noSched?'':(dp=>{const st=dp&&dp.start,fd=st?(d=>d.getUTCDate()+' '+MONS[LANG][d.getUTCMonth()]+' '+d.getUTCFullYear())(new Date(st+'T00:00:00Z')):'';
-      return `<div class="cardinfo"><span><b>${T('First day of work')}</b>${st?esc(fd):`<span class="sub">${T('Not filled in')}</span>${canSetup()?` <button class="btn small" data-act="gosetdp">${T('Fill it in')}</button>`:''}`}</span>${dp&&dp.pi?`<span class="dpq"><b>${T('DP')}</b>${T('{l} left · {e} earned · {u} taken',{l:dp.left==null?'—':dp.left,e:dp.earned,u:(dp.used||0)+(dp.adj||0)})}</span><span>${pill(dp.status,dp.tone)}</span>`:''}</div>`})(dpOf(p))}${p.noSched?'':(()=>{const c=offCounts(p.rows),y=yearOffCounts(p.name,String(A.y),S.month),k=stKeys([c,y]);
-      return `<div class="offsum"><div><b>${T('Leave and days off')} · ${esc(rangeLabel(A.from,A.to))}</b><span>${offChipsHtml(c,k)}</span></div><div><b>${T('This year so far')}</b><span>${offChipsHtml(y,k)}</span></div>${(dp=>`<div><b>${T('DP still to take')}</b><span>${dp&&dp.left!=null?`<span class="ofc dpl${dp.left<0?' neg':''}"><b>${dp.left}</b> ${T('of {e} earned',{e:dp.earned})}</span>`:`<span class="sub">${T('Fill in the first day of work to see it')}</span>`}</span></div>`)(dpOf(p))}</div>`})()}${more.length?`<div class="sub">${more.map(x=>esc(x[0])+': '+esc(x[1])).join(' · ')}</div>`:''}${R.perf?`<div class="perfbox"><b>${T('Performance')}</b>${esc(R.perf)}</div>`:''}${S.radar&&!p.noSched?radarBlock(p):''}${p.noSched&&A.freeFit&&A.freeFit[p.name]?(ff=>`<div class="banner">${T('The clock-ins of {m} fit the schedule of {n} ({a} of {b} shifts). If {n} has been clocking in under this name, join them: both names then count for {n}.',{m:esc(p.name),n:esc(ff.name),a:ff.hit,b:ff.tot})} <button class="btn small" data-act="joinalso" data-m="${esc(p.name)}" data-name="${esc(ff.name)}"${W()}>${T('Join with {n}',{n:esc(ff.name)})}</button></div>`)(A.freeFit[p.name]):''}`;
+      return `<div class="cardinfo"><span><b>${T('First day of work')}</b>${st?esc(fd):`<span class="sub">${T('Not filled in')}</span>${canSetup()?` <button class="btn small" data-act="gosetdp">${T('Fill it in')}</button>`:''}`}</span>${dp&&dp.pi?`<span class="dpq"><b>${T('DP')}</b>${T('{l} left · {e} earned · {u} taken',{l:dp.left==null?'—':dp.left,e:dp.earned,u:(dp.used||0)+(dp.adj||0)})}</span><span>${pill(dp.status,dp.tone)}</span>`:''}</div>`})(dpOf(p))}${more.length?`<div class="sub">${more.map(x=>esc(x[0])+': '+esc(x[1])).join(' · ')}</div>`:''}${R.perf?`<div class="perfbox"><b>${T('Performance')}</b>${esc(R.perf)}</div>`:''}${S.radar&&!p.noSched?radarBlock(p):''}${p.noSched&&A.freeFit&&A.freeFit[p.name]?(ff=>`<div class="banner">${T('The clock-ins of {m} fit the schedule of {n} ({a} of {b} shifts). If {n} has been clocking in under this name, join them: both names then count for {n}.',{m:esc(p.name),n:esc(ff.name),a:ff.hit,b:ff.tot})} <button class="btn small" data-act="joinalso" data-m="${esc(p.name)}" data-name="${esc(ff.name)}"${W()}>${T('Join with {n}',{n:esc(ff.name)})}</button></div>`)(A.freeFit[p.name]):''}`;
   let cs='';
   if(S.cardSet&&!p.noSched){const h0=h;h='';
     h+=`<div class="panel cardset"><div class="hd"><h2>${T('Settings for {n}',{n:esc(p.name)})}</h2></div>`;
@@ -5091,7 +5104,7 @@ document.addEventListener('click',e=>{
   if(a==='udept'){S.udept=el.dataset.v;try{localStorage.setItem('udept',S.udept)}catch(_){}
     /* the first person of the chosen department is selected; an open small card moves to them */
     const x=dayOrder()[0];if(x){if(S.pcard){S.pcard={n:x.name,d:x.dept,src:S.pcard.src};S.pcardNew=false;radarSvg.last=null}else S.psel={n:x.name,d:x.dept}}
-    render();return}
+    render();if(x&&S.udept!=='all')cardToDept(x.dept,x.name);return}
   if(a==='clkdept'){S.clkDept=el.dataset.v;render();return}
   if(a==='fdept'){S.fdept=el.dataset.v;render();return}
   if(a==='pcard'){S.pcard={n:el.dataset.n,d:el.dataset.d,src:el.closest('.formp')?'f':'c'};S.pcardNew=true;renderPcard();const x=$('#pcard .hbtn');if(x)x.focus();return}
@@ -5200,7 +5213,7 @@ document.addEventListener('change',e=>{
   else if(c==='newmonth'){if(el.value){S.month=el.value;S.from=S.to=null;S.sdept=null;render()}}
   else if(c==='from'){S.from=+el.value||null;render()}
   else if(c==='to'){S.to=+el.value||null;render()}
-  else if(c==='dept'){S.dept=el.value;render()}
+  else if(c==='dept'){S.dept=el.value;render();cardToDept(S.dept)}
   else if(c==='sort'){S.sort=el.value;S.sortDir=SORTDIR[S.sort]||1;try{localStorage.setItem('sort',S.sort+','+S.sortDir)}catch(e){}render()}
   else if(c==='only'){S.only=el.checked;render()}
   else if(c==='impon'){if(S.imp&&S.imp.items[+el.dataset.i]){S.imp.items[+el.dataset.i].on=el.checked;render()}}
