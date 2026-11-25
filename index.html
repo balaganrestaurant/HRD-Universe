@@ -3876,7 +3876,7 @@ function accPanel(){const D=accData();
   return `<section class="panel" style="margin-top:14px"><div class="hd"><div><h2>${T('For accounting')}</h2><div class="sub">${T('Hours worked and days of leave per person, {p}.',{p:D.per})} ${accNote()}</div></div>
     <div class="row"><button class="btn primary small" data-act="dlacx"${S.dl?'':' disabled'}>${T('Download Excel')}</button><button class="btn small" data-act="dlacp"${S.dl?'':' disabled'}>${T('Download PDF')}</button></div></div>
     <div class="scroll"><table class="people acc"><thead><tr>${D.head.map((h,i)=>i===2?'':`<th${i>2?' class="n"':''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>
-    ${D.rows.map(r=>`<tr>${D.vals(r,false).map((v,i)=>i===0?`<td><b>${esc(v)}</b>${r.pos?`<span class="posb">${esc(r.pos)}</span>`:''}</td>`:i===1?`<td>${r.p.noSched?`<span class="sub">${esc(v)}</span>`:dchip(v)}</td>`:i===2?'':`<td class="n">${v===''||v==null?'<span class="sub">—</span>':esc(v)}</td>`).join('')}</tr>`).join('')}
+    ${D.rows.map(r=>`<tr>${D.vals(r,false).map((v,i)=>i===0?`<td><b>${esc(v)}</b>${r.pos?posBadge(r.pos):''}</td>`:i===1?`<td>${r.p.noSched?`<span class="sub">${esc(v)}</span>`:dchip(v)}</td>`:i===2?'':`<td class="n">${v===''||v==null?'<span class="sub">—</span>':esc(v)}</td>`).join('')}</tr>`).join('')}
     <tr class="tot">${D.tvals(false).map((v,i)=>i===2?'':`<td${i>2?' class="n"':''}><b>${esc(v)}</b></td>`).join('')}</tr></tbody></table></div></section>`}
 function downloadAccExcel(){if(!window.XLSX){toast(T('The Excel writer didn’t load. Reload the page and try again.'));return}
   const D=accData(),aoa=[[T('Balagan · hours and leave for accounting')],[D.per],[accNote()],[],D.head].concat(D.rows.map(r=>D.vals(r,true)),[D.tvals(true)]);
