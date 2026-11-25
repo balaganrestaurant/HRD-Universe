@@ -348,7 +348,11 @@ main .panel.clockp,main .panel.formp{width:100%}
 #cbig .cbn{display:flex;flex-direction:column;padding:6px;max-height:60vh;overflow:auto}
 #cbig .cnh{display:flex;align-items:center;gap:10px;border:0;background:none;color:var(--ink);font:600 18px var(--body);padding:9px 10px;border-radius:8px;text-align:left;cursor:pointer}
 #cbig .cnh:active,#cbig .cnh.iscur{background:color-mix(in srgb,var(--gc) 25%,transparent)}
-#cbig .cnh i{width:10px;height:10px;border-radius:50%;flex:none}#cbig .cnh .posb{margin-left:auto;font-size:11px}
+#cbig .cnh i{width:10px;height:10px;border-radius:50%;flex:none}#cbig .ptag{margin-left:4px;display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:18px;border-radius:5px;font-size:11px;color:#fff;
+  background:color-mix(in srgb,var(--muted) 22%,var(--surface));border:1px solid color-mix(in srgb,var(--muted) 40%,transparent)}
+#cbig .ptag.t-lead{background:#E8B94E;border-color:#C98F1E;color:#3A2500}#cbig .ptag.t-sup{background:#7F5FD2;border-color:#5B3BAE}
+#cbig .ptag.t-senior{background:color-mix(in srgb,#3B82F6 22%,var(--surface));border-color:color-mix(in srgb,#3B82F6 45%,transparent);color:var(--blue,#60A5FA)}
+#cbig .ptag.pc-hot{background:#E8501A;border-color:#B91C1C}#cbig .ptag.pc-cold{background:#2F80E8;border-color:#1D4ED8}#cbig .ptag.pc-pastry{background:#D946EF;border-color:#A21CAF}
 .fzbar{display:flex;align-items:center;gap:6px;margin:0 0 8px}.fzbar .btn{min-width:38px;font-weight:700}.fzbar .fzv{min-width:60px;font-variant-numeric:tabular-nums}
 @media (hover:hover){.fzbar .sub{display:none}}
 .fcol{display:flex;flex-direction:column;gap:10px;min-width:0}
@@ -4020,7 +4024,7 @@ function shiftClock(){
      to the start of its band. Boxes on one side are stacked so they never overlap */
   const bandOut=RB+lanes*LW,XC=RL+34,boxes=[];let vb={x0:-(RL+40),x1:RL+40,y0:-(RL+40),y1:RL+40};
   G.forEach(g=>{const [ax,ay]=P(g.s,bandOut),right=ax>=-1,ppl=g.people,cols=ppl.length>8?2:1,rows=Math.ceil(ppl.length/cols);
-    const head=[...g.codes].join(' ')+'  '+fmm(g.s)+'–'+fmm(g.e)+' · '+ppl.length,nw=Math.max(...ppl.map(x=>x.name.length*7.4+(x.pos?24:0)))+22;
+    const head=[...g.codes].join(' ')+'  '+fmm(g.s)+'–'+fmm(g.e)+' · '+ppl.length,nw=Math.max(...ppl.map(x=>x.name.length*7.4+(x.pos&&/^(lead|sup)$/.test(posTier(x.pos))?24:0)))+22;
     const w=Math.max(head.length*6.9+22,nw*cols+8),h=24+rows*16+6;boxes.push({g,ax,ay,right,w,h,cols,rows})});
   for(const side of [true,false]){const bs=boxes.filter(b=>b.right===side).sort((a,b)=>a.ay-b.ay);
     bs.forEach(b=>{b.y=b.ay-b.h/2});for(let i=1;i<bs.length;i++)bs[i].y=Math.max(bs[i].y,bs[i-1].y+bs[i-1].h+8);
@@ -4038,7 +4042,7 @@ function shiftClock(){
       <text x="${f(x+9)}" y="${f(b.y+14)}" class="cbt"><tspan font-weight="700">${esc([...g.codes].join(' '))}</tspan>  ${fmm(g.s)}–${fmm(g.e)} · ${g.people.length}</text></g>`;
     const cw=(b.w-8)/b.cols;
     g.people.forEach((p,i)=>{const c=Math.floor(i/b.rows),r=i%b.rows,tx=x+10+c*cw,ty=b.y+38+r*16,di=deptIdx(p.dept);
-      svg+=`<g class="cname" data-g="${gi}" data-act="pcard" data-n="${esc(p.name)}" data-d="${esc(p.dept)}" data-pos="${esc(p.pos||'')}" tabindex="0" role="button"><circle cx="${f(tx+3)}" cy="${f(ty-4)}" r="3.2" fill="${di>=0?`var(--d${di+1})`:g.col}"/><text x="${f(tx+11)}" y="${f(ty)}" class="cnm">${esc(p.name)}</text>${p.pos?(()=>{/* the position as a small tag: its colour and symbol only (the name of the position shows when pointing at it) */
+      svg+=`<g class="cname" data-g="${gi}" data-act="pcard" data-n="${esc(p.name)}" data-d="${esc(p.dept)}" data-pos="${esc(p.pos||'')}" tabindex="0" role="button"><circle cx="${f(tx+3)}" cy="${f(ty-4)}" r="3.2" fill="${di>=0?`var(--d${di+1})`:g.col}"/><text x="${f(tx+11)}" y="${f(ty)}" class="cnm">${esc(p.name)}</text>${p.pos&&/^(lead|sup)$/.test(posTier(p.pos))?(()=>{/* only supervisors and up get a small tag: its colour and symbol only (the name of the position shows when pointing at it) */
         const t=posTier(p.pos)||'crew',sym=(POSICON[t]||'').trim(),bx=tx+11+p.name.length*7.1+6,bw=16;
         return `<g class="cpb t-${t}${posCls(p.pos)}"><title>${esc(p.pos)}</title><rect x="${f(bx)}" y="${f(ty-10)}" width="${bw}" height="12" rx="3.5"/>${sym?`<text x="${f(bx+bw/2)}" y="${f(ty-1.3)}">${sym}</text>`:''}</g>`})():''}<title>${esc(p.name+' · '+p.dept+(p.pos?' · '+p.pos:'')+' · '+normCode(p.code)+' '+fmm(p.s)+'–'+fmm(p.e))}</title></g>`})});
   const d0=A.m0+(dd-1)*DAY,peak=Math.max(...cnt),peakH=cnt.map((c,h)=>c===peak?h:-1).filter(h=>h>=0);
@@ -4153,7 +4157,7 @@ function cbigOpen(svg,g){cbigClose();const box=svg.querySelector(`.cbox[data-g="
   const head=(box.querySelector('.cbt')||{}).textContent||'',col=(box.querySelector('.cbh')||{}).getAttribute?box.querySelector('.cbh').getAttribute('fill'):'var(--accent)';
   const names=[...svg.querySelectorAll(`.cname[data-g="${g}"]`)].map(n=>({n:n.dataset.n,d:n.dataset.d,pos:n.dataset.pos||'',c:(n.querySelector('circle')||{}).getAttribute?n.querySelector('circle').getAttribute('fill'):col}));
   const o=document.createElement('div');o.id='cbig';o.style.setProperty('--gc',col);o.dataset.g=g;
-  o.innerHTML=`<div class="cbh2"><span>${esc(head)}</span><button type="button" class="cbx" data-act="cbigx" aria-label="${esc(T('Close'))}">×</button></div><div class="cbn">${names.map(x=>`<button type="button" class="cnh" data-act="pcard" data-n="${esc(x.n)}" data-d="${esc(x.d)}"><i style="background:${x.c}"></i>${esc(x.n)}${x.pos?posBadge(x.pos):''}</button>`).join('')}</div>`;
+  o.innerHTML=`<div class="cbh2"><span>${esc(head)}</span><button type="button" class="cbx" data-act="cbigx" aria-label="${esc(T('Close'))}">×</button></div><div class="cbn">${names.map(x=>`<button type="button" class="cnh" data-act="pcard" data-n="${esc(x.n)}" data-d="${esc(x.d)}"><i style="background:${x.c}"></i>${esc(x.n)}${x.pos&&/^(lead|sup)$/.test(posTier(x.pos))?(t=>`<span class="ptag t-${t}${posCls(x.pos)}" title="${esc(x.pos)}">${(POSICON[t]||'').trim()}</span>`)(posTier(x.pos)||'crew'):''}</button>`).join('')}</div>`;
   document.body.appendChild(o);const w=Math.min(300,innerWidth-24),h=o.offsetHeight,left=Math.max(12,Math.min(innerWidth-w-12,br.left+br.width/2-w/2)),sr=svg.getBoundingClientRect(),top=Math.max(12,Math.min(innerHeight-h-12,sr.bottom+8));/* under the clock, so the dial stays in view */
   o.style.width=w+'px';o.style.left=left+'px';o.style.top=top+'px';
   /* it grows out of the small box */
